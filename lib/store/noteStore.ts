@@ -1,27 +1,41 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-interface Note {
-  id: string;
+export const initialDraft = {
+  title: '',
+  content: '',
+  tag: 'Todo',
+};
+
+export type DraftNote = {
   title: string;
   content: string;
-}
+  tag: string;
+};
 
-interface NoteStore {
-  notes: Note[];
-  addNote: (note: Note) => void;
-  updateNote: (id: string, updatedFields: Partial<Note>) => void;
-  deleteNote: (id: string) => void;
-}
+type NoteStore = {
+  draft: DraftNote;
+  setDraft: (note: Partial<DraftNote>) => void;
+  clearDraft: () => void;
+};
 
-export const useNoteStore = create<NoteStore>(set => ({
-  notes: [],
-  addNote: note => set(state => ({ notes: [...state.notes, note] })),
-  updateNote: (id, updatedFields) =>
-    set(state => ({
-      notes: state.notes.map(note =>
-        note.id === id ? { ...note, ...updatedFields } : note
-      ),
-    })),
-  deleteNote: id =>
-    set(state => ({ notes: state.notes.filter(note => note.id !== id) })),
-}));
+export const useNoteStore = create<NoteStore>()(
+  persist(
+    (set, get) => ({
+      draft: initialDraft,
+
+      setDraft: note =>
+        set({
+          draft: {
+            ...get().draft,
+            ...note,
+          },
+        }),
+
+      clearDraft: () => set({ draft: initialDraft }),
+    }),
+    {
+      name: 'note-draft', // localStorage key
+    }
+  )
+);

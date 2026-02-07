@@ -1,32 +1,25 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createNote } from '@/lib/api';
+import { useNoteStore } from '@/lib/store/noteStore';
 import css from './NoteForm.module.css';
 
 export default function NoteForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [draft, setDraft] = useState({
-    title: '',
-    content: '',
-    tag: 'Todo',
-  });
+  const { draft, setDraft, clearDraft } = useNoteStore();
 
   const mutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-      router.push('/notes/filter/all');
+      clearDraft();
+      router.back();
     },
   });
-
-  const handleChange = (field: string, value: string) => {
-    setDraft(prev => ({ ...prev, [field]: value }));
-  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -50,7 +43,7 @@ export default function NoteForm() {
           minLength={3}
           maxLength={50}
           value={draft.title}
-          onChange={e => handleChange('title', e.target.value)}
+          onChange={e => setDraft({ title: e.target.value })}
         />
       </div>
 
@@ -63,7 +56,7 @@ export default function NoteForm() {
           maxLength={500}
           className={css.textarea}
           value={draft.content}
-          onChange={e => handleChange('content', e.target.value)}
+          onChange={e => setDraft({ content: e.target.value })}
         />
       </div>
 
@@ -74,7 +67,7 @@ export default function NoteForm() {
           name="tag"
           className={css.select}
           value={draft.tag}
-          onChange={e => handleChange('tag', e.target.value)}
+          onChange={e => setDraft({ tag: e.target.value })}
         >
           <option value="Todo">Todo</option>
           <option value="Work">Work</option>
@@ -92,6 +85,7 @@ export default function NoteForm() {
         >
           Cancel
         </button>
+
         <button
           type="submit"
           className={css.submitButton}
